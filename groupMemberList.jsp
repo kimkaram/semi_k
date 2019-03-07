@@ -1,60 +1,85 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page import="group.model.vo.GroupMgt, member.model.vo.Member, java.util.*" %>   
-<%@ page import="leader.model.vo.Leader" %>
-<%
-	ArrayList<GroupMgt> alist = (ArrayList<GroupMgt>)request.getAttribute("alist");
-	Member member = (Member)session.getAttribute("loginMember");
-	GroupMgt group = (GroupMgt)request.getAttribute("group");
-	/* Leader leader = (Leader)session.getAttribute("leaderUser"); */
-%> 
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>모임번호에 대한 전체 조회 리스트 페이지</title>
-	<script type="text/javascript">
-		function searchId() {
-			location href = "/semi/gmlist?idsearch=<%= member.getUserId() %>";
-		}
-		
-		function deleteGroupMember() {
-			location href = "/semi/mdel?mdelete=<%= member.getUserId() %>";
-		}
-	</script>
-</head>
-<body>
-	<%@ include file="../common/header.jsp" %>
-	<hr style="clear:both;">
-	<h3 align="center"><font color="grey">모임회원 목록</font></h3>
-	
-	<br><br>
-	<form action="/semi/mlist" method="get" align="center" id="setRows">
-		<div class="container" align="center" style="margin-bottom:20px;">
-			<input type="text" placeholder="아이디검색" name="idsearch"></input>
-			<button onclick="searchId();">검색</button>
-			<!-- onclick="searchId();"  -->
-		</div>
-	</form>
+package group.controller;
 
-	<table align="center" border="1" cellspacing="0" width="700">
-		<tr>
-			<th>아이디</th>
-			<th>모임번호</th>
-			<th>모입 가입 날짜</th>
-			<th>탈퇴</th>
-		</tr>
+import java.io.IOException;
+import java.util.ArrayList;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import group.model.service.GroupMgtService;
+import group.model.vo.GroupMgt;
+
+
+/**
+ * Servlet implementation class GMemberListServlet
+ */
+@WebServlet("/gmlist")
+public class GMemberListServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public GMemberListServlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		<% for(int i = 0; i < alist.size(); i++){ %>
-		<tr>
-		<td><%= alist.get(i).getUserId() %></td>
-		<td><%= alist.get(i).getGroupNo() %></td>
-		<td><%= alist.get(i).getGroupEnrolltime() %></td>		
-		<td align="center"><input type="button" name="mdelete" value="탈퇴" onclick="deleteGroupMember();"></td>
-		</tr>
-		<% } %>
-	</table>
-	&nbsp;
-	<%@include file="../common/footer.jsp"%>
-</body>
-</html>
+		request.setCharacterEncoding("utf-8");
+		response.setContentType("text/html; charset=utf-8");
+		int currentPage = 1;
+		if(request.getParameter("page") != null) {
+			currentPage = Integer.parseInt(request.getParameter("page"));
+		}
+		int limit = 10;
+		
+		String userId = request.getParameter("idsearch");
+		//String userGroupNo = request.getParameter("");
+
+		GroupMgtService gmservice = new GroupMgtService();
+		int listCount = gmservice.getListCount();
+		
+		ArrayList<GroupMgt> list = gmservice.searchMember(userId, currentPage, limit);
+		
+		int maxPage = (int)((double)listCount / limit + 0.9);
+		int startPage = (((int)((double)currentPage / limit + 0.9))
+				- 1) * limit + 1;
+		int endPage = startPage + limit - 1;
+		
+		if(maxPage < endPage)
+			endPage = maxPage;
+		
+		RequestDispatcher view = null;
+		if(list !=  null) {
+			view = request.getRequestDispatcher("views/group/leaderListView.jsp");
+			request.setAttribute("list", list);
+			System.out.println("gmlist서블릿 : " + list);
+			//request.setAttribute("group", group.setUserId(ss));
+			//System.out.println("group2 : " + group);
+			view.forward(request, response);
+		} else {
+			view = request.getRequestDispatcher("views/group/groupError.jsp");
+			request.setAttribute("message", "모임회원 검색  조회 실패!");
+			view.forward(request, response);
+		}
+		
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(request, response);
+	}
+
+}
