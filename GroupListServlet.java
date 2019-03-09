@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import group.model.service.GroupMgtService;
 import group.model.vo.GroupMgt;
+import group2.model.dao.GroupDao;
 import group2.model.service.GroupService;
 import group2.model.vo.Group;
 
@@ -38,20 +39,24 @@ public class GroupListServlet extends HttpServlet {
 		response.setContentType("text/html; charset=utf-8");
 
 		int currentPage = 1;
+		int searchList = 0;
 		
-		String groupNo = request.getParameter("leader");
-		if(request.getParameter("page") != null) {
-			currentPage = Integer.parseInt(request.getParameter("page"));
+		if(request.getParameter("page") != null) 
+			currentPage = Integer.parseInt(request.getParameter("page").trim());
+
+		String gno = request.getParameter("groupno");
+		String userId = request.getParameter("idsearch");
+		
+		if(userId == null) {
+			userId = "";
 		}
-		
-		System.out.println("groupNo서블릿 : " + groupNo);
-		
 		int limit = 10;
 		
-		GroupMgtService gservice = new GroupMgtService();
-		int listCount = gservice.getListCount();
 		
-		ArrayList<GroupMgt> list = gservice.selectList(groupNo, currentPage, limit);
+		GroupMgtService gservice = new GroupMgtService();
+		int listCount = gservice.getListCount(gno);
+		
+		ArrayList<GroupMgt> list = gservice.selectList(gno, currentPage, limit);
 		
 		int maxPage = (int)((double)listCount / limit + 0.9);
 		int startPage = (((int)((double)currentPage / limit + 0.9))
@@ -66,12 +71,16 @@ public class GroupListServlet extends HttpServlet {
 		if(list != null) {
 			view = request.getRequestDispatcher("views/group/leaderListView.jsp");
 			request.setAttribute("glist", list);
-			System.out.println("glist서블릿 : " + list);
 			request.setAttribute("currentPage", currentPage);
 			request.setAttribute("maxPage", maxPage);
 			request.setAttribute("startPage", startPage);
 			request.setAttribute("endPage", endPage);
 			request.setAttribute("listCount", listCount);
+			request.setAttribute("searchList", searchList);
+			request.setAttribute("groupNo", gno);
+			request.setAttribute("idsearch", userId);
+			
+			
 			view.forward(request, response);
 		} else {
 			view = request.getRequestDispatcher("views/group/groupError.jsp");
