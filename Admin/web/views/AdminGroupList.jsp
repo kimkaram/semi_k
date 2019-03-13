@@ -3,18 +3,19 @@
 <%@ page import="group.model.vo.GroupMgt, member.model.vo.Member, java.util.*" %>   
 <%@ page import="group2.model.vo.Group2" %>
 <%
-	ArrayList<Group2> adlist = (ArrayList<Group2>)request.getAttribute("adlist");
-	ArrayList<Group2> adslist = (ArrayList<Group2>)request.getAttribute("adslist"); 
-	Member member = (Member)session.getAttribute("loginMember");
-	int listCount = ((Integer)request.getAttribute("listCount")).intValue();
-	int startPage = ((Integer)request.getAttribute("startPage")).intValue();
-	int endPage = ((Integer)request.getAttribute("endPage")).intValue();
-	int maxPage = ((Integer)request.getAttribute("maxPage")).intValue();			
-	int currentPage = ((Integer)request.getAttribute("currentPage")).intValue();
-	int searchList = ((Integer)request.getAttribute("searchList")).intValue();
+	//전체 조회용 리스트
+	ArrayList<Group2> list = (ArrayList<Group2>)request.getAttribute("list");
+	//검색용 리스트
+	//ArrayList<Group> adslist = (ArrayList<Group>)request.getAttribute("adslist");
 	
-	String gname = request.getAttribute("groupname").toString();
-	String cgno = request.getAttribute("cgno").toString(); 
+	Member member = (Member)session.getAttribute("loginMember");
+	int listCount = Integer.parseInt(request.getAttribute("listCount").toString());
+	int startPage = Integer.parseInt(request.getAttribute("startPage").toString());
+	int endPage = Integer.parseInt(request.getAttribute("endPage").toString());
+	int maxPage = Integer.parseInt(request.getAttribute("maxPage").toString());			
+	int currentPage = Integer.parseInt(request.getAttribute("page").toString());
+	int searchList = Integer.parseInt(request.getAttribute("searchList").toString());
+	
 %>   
  
 <!DOCTYPE html>
@@ -22,16 +23,48 @@
 <head>
 <meta charset="UTF-8">
 <title>모임 관리자 페이지</title>
+<script type="text/javascript" src="/semi/resources/js/jquery-3.3.1.min.js"></script>
+<script type="text/javascript">
+	$(function(){
+		showDiv();
+		
+		$("input[name=item]").on("change", function(){
+			showDiv();
+		});
+	});
+	
+	function showDiv(){
+			if($("input[name=item]").eq(0).is(":checked")){
+				$("#titleDiv").css("display", "block");
+				$("#dateDiv").css("display", "none");
+			}
+			
+			if($("input[name=item]").eq(1).is(":checked")){
+				$("#titleDiv").css("display", "none");
+				$("#dateDiv").css("display", "block");
+			}
+		}
 
+</script>
 </head>
 <body>
-	<%@ include file="../common/header.jsp" %>
+	<%@ include file = "../common/adminHeader.jsp"%>
 	<hr style="clear:both;">
-	<h3 align="center"><font color="grey">모임회원 목록</font></h3>
+	<h3 align="center"><font color="grey">모임 목록</font></h3>
 	
 	<br><br>
-	<form action="/semi/adgsearch" method="get" align="center" id="setRows">
-		<div class="box">
+	
+	<center>
+	<div>
+	<h4>검색할 항목을 선택하시오.</h4>
+	<input type="radio" name="item" value="title" checked> 제목 &nbsp; &nbsp; &nbsp; 
+	<input type="radio" name="item" value="date"> 날짜
+	</div>
+	</center>
+	<br><br>
+	<div id="titleDiv">
+	<form action="/semi/adgsearch?page=1" method="get" align="center" id="setRows">
+	<input type="hidden" value="writer" name="search">
 			<select name="cgno">
 				<option value="">전체</option>
 				<option value="c0001">IT</option>
@@ -44,12 +77,27 @@
 				<option value="c0008">자유</option>
 			</select> 
 			<input type="text" style="width: 300px;" name="groupname" placeholder="제목"></input> 
-			<input type="submit" name="button" id="button" value="검색"></input>
-		</div>
+			<input type="submit" name="button" value="검색"></input>
+	</input>		
 	</form>
+	</div>
+	
+	<div id="dateDiv">
+	<form action="/semi/adgsearch" method="get" align="center" id="setRows">
+			<input type="hidden" name="search" value="date">
+			<label>날짜 : 		
+			<input type="date" name="from"> - 
+			<input type="date" name="to"></label>
+			<input type="submit" name="button" value="검색"></input>
+			</input>
+	</form>
+	</div>
+
+
 
 	<br><br>
-	<% if(adlist != null || adslist == null) { %>
+
+	<%if(list.size() != 0){ %>	
 	<table align="center" border="1" cellspacing="0" width="700">
 		<tr>
 			<th>모임번호</th>
@@ -60,29 +108,30 @@
 			<th>수정</th>
 			<th>탈퇴</th>
 		</tr>
-		
-		<% for(int i = 0; i < adlist.size(); i++){ %>
+		<% for(int i = 0; i < list.size(); i++){ %>
 		<tr>
-		<td><%= adlist.get(i).getGroupNo() %></td>
-		<td><%= adlist.get(i).getLeaderId() %></td>
-		<td><%= adlist.get(i).getCgNo() %></td>
-		<td><%= adlist.get(i).getGroupName() %></td>
-		<td><%= adlist.get(i).getCreatetime() %></td>	
-		<td align="center"><button onclick="location.href = '/semi/agdelete?gmdelete=<%= adlist.get(i).getLeaderId() %>&page=<%= currentPage%>'">수정</button></td>
-		<td align="center"><button onclick="location.href = '/semi/agdelete?gmdelete=<%= adlist.get(i).getGroupNo() %>&page=<%= currentPage%>'">삭제</button></td>
+		<td><%= list.get(i).getGroupNo() %></td>
+		<td><%= list.get(i).getLeaderId() %></td>
+		<td><%= list.get(i).getCgNo() %></td>
+		<td><%= list.get(i).getGroupName() %></td>
+		<td><%= list.get(i).getCreatetime() %></td>	
+		<td align="center"><button onclick="location.href = '/semi/agudetail?groupNo=<%= list.get(i).getGroupNo() %>&page=<%= currentPage%>'">수정</button></td>
+		<td align="center"><button onclick="location.href = '/semi/agdelete?gmdelete=<%= list.get(i).getGroupNo() %>&page=<%= currentPage%>'">삭제</button></td>
 		</tr>
-		<% } %>
+		<% } }else {%>
+		<h3 align="center">조회된 모임이 없습니다.</h3>
+	<%} %>		
 	</table>
+
 	<br>
-	<!-- http://127.0.0.1:8880/semi/glist?page=1&groupno=G_1&idsearch=0 -->
-<!-- 페이징 처리 -->
+	
+ <!-- 페이징 처리 -->
 <div style="text-align:center;">
-<% if(searchList == 0){  %>
 <% if(currentPage == 1){ %>
 	[맨처음]&nbsp;
 	[이전]&nbsp;
 <% }else{ %>
-	<a href="/semi/adlist?page=1">[맨처음]&nbsp;</a>
+	<a href="/semi/adlist?page=1&">[맨처음]&nbsp;</a>
 	<a href="/semi/adlist?page=<%= currentPage - 1 %>">[이전]&nbsp;</a>
 
 <% }
@@ -103,65 +152,10 @@
 <% }else{ %>
 	<a href="/semi/adlist?page=<%= currentPage + 1 %>">[다음]&nbsp;</a>
 	<a href="/semi/adlist?page=<%= maxPage %>">[맨끝]&nbsp;</a>
-<% }} %>
+<% } %>
+
 </div>
-	<% } %>
 	
-	<%if(adslist != null || adlist == null) { %>
-		<table align="center" border="1" cellspacing="0" width="700">
-		<tr>
-			<th>모임번호</th>
-			<th>모임장 아이디</th>
-			<th>카테고리 번호</th>
-			<th>모임이름</th>
-			<th>모임생성날짜</th>
-			<th>수정</th>
-			<th>탈퇴</th>
-		</tr>
-		
-		<% for(int i = 0; i < adslist.size(); i++){ %>
-		<tr>
-		<td><%= adslist.get(i).getGroupNo() %></td>
-		<td><%= adslist.get(i).getLeaderId() %></td>
-		<td><%= adslist.get(i).getCgNo() %></td>
-		<td><%= adslist.get(i).getGroupName() %></td>
-		<td><%= adslist.get(i).getCreatetime() %></td>	
-		<td align="center"><button onclick="location.href = '/semi/mdel?mdelete=<%= adslist.get(i).getLeaderId() %>&page=<%= currentPage%>'">수정</button></td>
-		<td align="center"><button onclick="location.href = '/semi/agdelete?gmdelete=<%= adslist.get(i).getGroupNo() %>&page=<%= currentPage%>'">삭제</button></td>
-		</tr>
-		<% } %>
-	</table>
-<div style="text-align:center;">
-<% if(searchList == 1){  %>
-<% if(currentPage == 1){ %>
-	[맨처음]&nbsp;
-	[이전]&nbsp;
-<% }else{ %>
-	<a href="/semi/adslist?page=1&cgno=<%= cgno %>&groupname=<%= gname  %>">[맨처음]&nbsp;</a>
-	<a href="/semi/adslist?page=<%= currentPage - 1 %>&cgno=<%= cgno %>&groupname=<%= gname  %>">[이전]&nbsp;</a>
-
-<% }
-	for(int p = startPage; p <= endPage; p++){ 
-		if(p == currentPage){
-		
-%>
-	<font color="red" size="4"><b>[<%= p %>]</b></font>
-<% }else{ %>
-	<a href="/semi/adslist?page=<%= p %>&cgno=<%= cgno %>&groupname=<%= gname  %>">
-	<%= p %></a>
-<% }} %>
-
-<% if(currentPage >= maxPage){ %>
-	[다음]&nbsp;
-	[맨끝]&nbsp;
-	
-<% }else{ %>
-	<a href="/semi/adslist?page=<%= currentPage + 1 %>&cgno=<%= cgno %>&groupname=<%= gname  %>">[다음]&nbsp;</a>
-	<a href="/semi/adslist?page<%= maxPage %>&cgno=<%= cgno %>&groupname=<%= gname  %>">[맨끝]&nbsp;</a>
-<% }} %>
-	</div>
-		<% } %>
-&nbsp;
 <%@include file="../common/footer.jsp"%>
 
 </body>
