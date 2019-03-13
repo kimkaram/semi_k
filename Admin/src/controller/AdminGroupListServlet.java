@@ -39,18 +39,24 @@ public class AdminGroupList extends HttpServlet {
 
 		int currentPage = 1;
 		int searchList = 0;
-		
-		if(request.getParameter("page") != null) 
-			currentPage = Integer.parseInt(request.getParameter("page").trim());
-		String cgNo = "";
-		String gname = "";
-		int limit = 10;
 
+		if(request.getParameter("page") != null ) 
+			currentPage = Integer.parseInt(request.getParameter("page").trim());
+
+		String cgNo = request.getParameter("cgno");
+		String gname = request.getParameter("groupname");
+		
+		if(cgNo == null || gname == null) {
+			cgNo = "";
+			gname ="";
+		}
+		
+		int limit = 10;
 		
 		AdminService aservice = new AdminService();
-		int listCount = aservice.getListCount();
+		int listCount = aservice.groupAdminListCount(); // 모임개수
 		
-		ArrayList<Group2> list = aservice.selectList(currentPage, limit);
+		ArrayList<Group2> list = aservice.selectAdminGroupList(currentPage, limit);//그 모임들에 대한 정보
 		
 		int maxPage = (int)((double)listCount / limit + 0.9);
 		int startPage = (((int)((double)currentPage / limit + 0.9))
@@ -62,21 +68,19 @@ public class AdminGroupList extends HttpServlet {
 		
 		RequestDispatcher view = null;
 		
-		if(list != null) {
+		if(list.size() > 0) {
 			view = request.getRequestDispatcher("views/admin/adminGroupList.jsp");
-			request.setAttribute("adlist", list);
-			request.setAttribute("currentPage", currentPage);
+			request.setAttribute("list", list);
+			request.setAttribute("page", currentPage);
 			request.setAttribute("maxPage", maxPage);
 			request.setAttribute("startPage", startPage);
 			request.setAttribute("endPage", endPage);
 			request.setAttribute("listCount", listCount);
 			request.setAttribute("searchList", searchList);
-			request.setAttribute("cgno", cgNo);
-			request.setAttribute("groupname", gname);
 			
 			view.forward(request, response);
 		} else {
-			view = request.getRequestDispatcher("views/member/memberError.jsp");
+			view = request.getRequestDispatcher("views/admin/memberError.jsp");
 			request.setAttribute("message", currentPage + "에 대한 목록 조회 실패!");
 			view.forward(request, response);
 		}
